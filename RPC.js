@@ -78,6 +78,14 @@ sys.puts('Server running at http://127.0.0.1:8000/');
 var processRequest = function(rpcRequest, res) {
   // validate
   checkValidRequest(rpcRequest, res);  
+    
+  if (
+    version == "2.0" && 
+    rpcRequest.params instanceof Object &&
+    !(rpcRequest.params instanceof Array)
+  ) {
+    rpcRequest.params = paramsObjToArr(rpcRequest);
+  }
   
   try {
     // check for param count
@@ -145,12 +153,46 @@ var checkValidRequest = function(rpcRequest, res) {
   if (
     !rpcRequest.method || 
     !rpcRequest.params || 
-    rpcRequest.id === undefined ||
-    !(rpcRequest.params instanceof Array)
-  ) {          
+    rpcRequest.id === undefined
+  ) {    
     invalidRequest(res, rpcRequest);
+    return;
   }
+  var params = rpcRequest.params;
+  if (version == "2.0") {
+    if (params instanceof Array || params instanceof Object) {
+      return;
+    }
+  } else {
+    if (params instanceof Array) {
+      return;
+    }
+  }
+  invalidRequest(res, rpcRequest);  
 }
+
+
+
+/**
+ * Named arguments handling
+ */
+
+var paramsObjToArr = function(rpcRequest) {
+  var argumentsArray = [];
+  var argumentNames = getArgumentNames(service[rpcRequest.method]);
+  for (var i=0; i < argumentNames.length; i++) {
+    argumentsArray.push(rpcRequest.params[argumentNames[i]]);
+  }
+  return argumentsArray;
+}
+
+var getArgumentNames = function(fcn) {
+  var code = fcn.toString();
+  var args = code.slice(0, code.indexOf(")")).split(/\(|\s*,\s*/);
+  args.shift();
+  return args;
+}
+
 
 
 /**
@@ -185,31 +227,4 @@ var invalidParams = function(res, request) {
 
 var internalError = function(res, request) {
   sendError(res, 500, createError(-32603, "Internal error."), request);  
-}
-
-
-/**
- * FUNCTION MAGIC
- */
-var named = function(fcn, argNames, defaults) 
-{
-  return function(args) {
-    var argList = [];
-    argNames.forEach(function(argName) {
-      var value = args[argName];
-      if (value === undefined) {
-        value = defaults[argName];
-      }
-      argList.push(value);
-    });
-    
-    return fcn.apply(this, argList);
-  }
-}
-
-var getArgumentNames = function(fcn) {
-  var code = fcn.toString();
-  args = code.slice(0, code.indexOf(")")).split(/\(|\s*,\s*/);
-  args.shift();
-  return args;
 }

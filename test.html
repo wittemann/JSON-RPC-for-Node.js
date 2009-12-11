@@ -63,7 +63,9 @@
       '[1,2,3]' : 
         '{"jsonrpc":"2.0","error":{"code":-32600,"message":"Invalid Request."},"id":null}',
       '[{"jsonrpc": "2.0", "method": "add", "params": [1, 2], "id": 1}, {"jsonrpc": "2.0", "method": "add", "params": [2, 3], "id": 2}]' : 
-        '[{"jsonrpc":"2.0","result":3,"id":1},{"jsonrpc":"2.0","result":5,"id":2}]'
+        '[{"jsonrpc":"2.0","result":3,"id":1},{"jsonrpc":"2.0","result":5,"id":2}]',
+      '{"jsonrpc": "2.0", "method": "add", "params": {a: 1, b: 2}, "id": 1}' : 
+        '{"jsonrpc":"2.0","result":3,"id":1}'
 	  } 
 	
 	
@@ -207,7 +209,7 @@
           </tr>
           <tr>
             <td>Named parameters:</td>
-            <td>(Not sure how to do that!)</td>
+            <td><input onclick="filin(this)" type='button' value='{"jsonrpc": "2.0", "method": "add", "params": {a: 1, b: 2}, "id": 1}'></td>
           </tr>
           <tr>
             <td>Notification:</td>
