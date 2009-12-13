@@ -47,7 +47,7 @@ http.createServer(function (req, res) {
         id: req.uri.params.id
       };      
     } catch (e) {
-      parseError(res, null);
+      sendError(res, parseError());
       return;
     }
     processRequest(rpcRequest, res);
@@ -64,7 +64,7 @@ http.createServer(function (req, res) {
       try {
         var rpcRequest = JSON.parse(body);        
       } catch (e) {
-        parseError(res, null);
+        sendError(res, parseError());
         return;
       }
       processRequest(rpcRequest, res);
@@ -90,7 +90,7 @@ var processRequest = function(rpcRequest, res) {
   try {
     // check for param count
     if (service[rpcRequest.method].length != rpcRequest.params.length) {
-      invalidParams(res, rpcRequest);
+      sendError(res, invalidParams(rpcRequest));
       return;
     }
     
@@ -104,12 +104,12 @@ var processRequest = function(rpcRequest, res) {
       });
       // failed
       result.addErrback(function(e) {    
-        internalError(res, rpcRequest);
+        sendError(res, internalError(rpcRequest));
       });
       return;
     }
   } catch (e) {
-    methodNotFound(res, rpcRequest);
+    sendError(res, methodNotFound(rpcRequest));
     return;
   }
   
@@ -155,7 +155,7 @@ var checkValidRequest = function(rpcRequest, res) {
     !rpcRequest.params || 
     rpcRequest.id === undefined
   ) {    
-    invalidRequest(res, rpcRequest);
+    sendError(res, invalidRequest(rpcRequest));
     return;
   }
   var params = rpcRequest.params;
@@ -168,7 +168,7 @@ var checkValidRequest = function(rpcRequest, res) {
       return;
     }
   }
-  invalidRequest(res, rpcRequest);  
+  sendError(res, invalidRequest(rpcRequest));  
 }
 
 
@@ -198,10 +198,9 @@ var getArgumentNames = function(fcn) {
 /**
  * ERROR HANDLING
  */
-var sendError = function(res, status, error, request) {
-  res.sendHeader(status, {'Content-Type': 'application/json-rpc'});      
-  var rpcRespone = createResponse(null, error, request);
-  res.sendBody(JSON.stringify(rpcRespone));
+var sendError = function(res, responseWrapper) {
+  res.sendHeader(responseWrapper.httpCode, {'Content-Type': 'application/json-rpc'});      
+  res.sendBody(JSON.stringify(responseWrapper.response));
   res.finish();  
 }
 
@@ -209,22 +208,27 @@ var createError = function(code, message) {
   return {code : code, message : message};
 }
 
-var parseError = function(res, request) {
-  sendError(res, 500, createError(-32700, "Parse error."), request);
+var parseError = function() {
+  return {httpCode: 500, response: 
+    createResponse(null, createError(-32700, "Parse error."), null)};
 }
 
-var invalidRequest = function(res, request) {
-  sendError(res, 400, createError(-32600, "Invalid Request."), request);
+var invalidRequest = function(request) {
+  return {httpCode: 400, response: 
+    createResponse(null, createError(-32600, "Invalid Request."), request)};
 }
 
-var methodNotFound = function(res, request) {
-  sendError(res, 404, createError(-32601, "Method not found."), request);  
+var methodNotFound = function(request) {
+  return {httpCode: 404, response: 
+    createResponse(null, createError(-32601, "Method not found."), request)};  
 }
 
-var invalidParams = function(res, request) {
-  sendError(res, 500, createError(-32602, "Invalid params."), request);  
+var invalidParams = function(request) {
+  return {httpCode: 500, response: 
+    createResponse(null, createError(-32602, "Invalid params."), request)};
 }
 
-var internalError = function(res, request) {
-  sendError(res, 500, createError(-32603, "Internal error."), request);  
+var internalError = function(request) {
+  return {httpCode: 500, response: 
+    createResponse(null, createError(-32603, "Internal error."), request)};  
 }
