@@ -14,7 +14,7 @@
  */
 
 // set the version of the JSON-RPC
-var version = "2.0";
+var version = process.ARGV[3] || "2.0";
 
 // require the system stuff 
 var sys = require('sys'), 
@@ -45,12 +45,12 @@ http.createServer(function (req, res) {
         method: req.uri.params.method,
         params: JSON.parse(req.uri.params.params),
         id: req.uri.params.id
-      };      
+      };
+      processRequest(rpcRequest, res);      
     } catch (e) {
-      sendError(res, parseError());
-      return;
+      var error = parseError();
+      send(res, error.response, error.httpCode);
     }
-    processRequest(rpcRequest, res);
     
   // handle POST requests
   } else {
@@ -62,14 +62,13 @@ http.createServer(function (req, res) {
 
     req.addListener("complete", function() {
       try {
-        var rpcRequest = JSON.parse(body);        
+        var rpcRequest = JSON.parse(body);
+        processRequest(rpcRequest, res);        
       } catch (e) {
-        sendError(res, parseError());
-        return;
+        var error = parseError();
+        send(res, error.response, error.httpCode);        
       }
-      processRequest(rpcRequest, res);
     });    
-    return;
   } 
 }).listen(8000);
 sys.puts('Server running at http://127.0.0.1:8000/');
@@ -77,8 +76,12 @@ sys.puts('Server running at http://127.0.0.1:8000/');
 
 var processRequest = function(rpcRequest, res) {
   // validate
-  checkValidRequest(rpcRequest, res);  
-    
+  var error = checkValidRequest(rpcRequest)
+  if (error) {
+    send(res, error.response, error.httpCode);
+  };  
+  
+  // named parameter handling
   if (
     version == "2.0" && 
     rpcRequest.params instanceof Object &&
@@ -90,7 +93,8 @@ var processRequest = function(rpcRequest, res) {
   try {
     // check for param count
     if (service[rpcRequest.method].length != rpcRequest.params.length) {
-      sendError(res, invalidParams(rpcRequest));
+      var error = invalidParams(rpcRequest);
+      send(res, error.response, error.httpCode);      
       return;
     }
     
@@ -104,16 +108,18 @@ var processRequest = function(rpcRequest, res) {
       });
       // failed
       result.addErrback(function(e) {    
-        sendError(res, internalError(rpcRequest));
+        var error = internalError(rpcRequest);
+        send(res, error.response, error.httpCode);        
       });
       return;
+    } else {
+      finishRequest(rpcRequest, res, result, null);
     }
   } catch (e) {
-    sendError(res, methodNotFound(rpcRequest));
+    var error = methodNotFound(rpcRequest);
+    send(res, error.response, error.httpCode);    
     return;
   }
-  
-  finishRequest(rpcRequest, res, result, null);
 }
 
 
@@ -127,7 +133,20 @@ var finishRequest = function(rpcRequest, res, result, error) {
     res.sendHeader(204, {'Connection': 'close'});
   }
 
-  res.finish();  
+  res.finish();
+}
+
+
+var send = function(res, rpcRespone, httpCode) {
+  // default resposes
+  if (httpCode != 204) {
+    res.sendHeader(httpCode, {'Content-Type': 'application/json-rpc'});
+    res.sendBody(JSON.stringify(rpcRespone));    
+  // notification response
+  } else {
+    res.sendHeader(204, {'Connection': 'close'});    
+  }
+  res.finish();
 }
 
 
@@ -149,14 +168,13 @@ var createResponse = function(result, error, rpcRequest) {
 }
 
 
-var checkValidRequest = function(rpcRequest, res) {
+var checkValidRequest = function(rpcRequest) {
   if (
     !rpcRequest.method || 
     !rpcRequest.params || 
     rpcRequest.id === undefined
   ) {    
-    sendError(res, invalidRequest(rpcRequest));
-    return;
+    return invalidRequest(rpcRequest);
   }
   var params = rpcRequest.params;
   if (version == "2.0") {
@@ -168,7 +186,7 @@ var checkValidRequest = function(rpcRequest, res) {
       return;
     }
   }
-  sendError(res, invalidRequest(rpcRequest));  
+  return invalidRequest(rpcRequest);
 }
 
 
@@ -198,12 +216,6 @@ var getArgumentNames = function(fcn) {
 /**
  * ERROR HANDLING
  */
-var sendError = function(res, responseWrapper) {
-  res.sendHeader(responseWrapper.httpCode, {'Content-Type': 'application/json-rpc'});      
-  res.sendBody(JSON.stringify(responseWrapper.response));
-  res.finish();  
-}
-
 var createError = function(code, message) {
   return {code : code, message : message};
 }

@@ -56,6 +56,8 @@
         '{"jsonrpc":"2.0","result":65,"id":1}',
       '{"jsonrpc": "2.0", "method": "note", "params": [42, 23], "id": null}' : 
         'Notification send!',
+      '{"jsonrpc": "2.0", "method": "pwd", "params": [], "id": 58}' : 
+        '{"jsonrpc":"2.0","result":"/Users/mw/Documents/1und1/workspace/node\\n","id":58}',        
       '{"jsonrpc": "2.0", "method": "foobar", "params": [], "id": "1"}' : 
         '{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found."},"id":"1"}',
       '{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]' : 
@@ -215,6 +217,10 @@
             <td>Notification:</td>
             <td><input onclick="filin(this)" type='button' value='{"jsonrpc": "2.0", "method": "note", "params": [42, 23], "id": null}'></td>
           </tr>
+          <tr>      
+            <td>Async:</td>
+            <td><input onclick="filin(this)" type='button' value='{"jsonrpc": "2.0", "method": "pwd", "params": [], "id": 58}'></td>
+          </tr>          
           <tr>
             <td style="color: red;">Method Not Found:</td>
             <td><input onclick="filin(this)" type='button' value='{"jsonrpc": "2.0", "method": "foobar", "params": [], "id": "1"}'></td>
