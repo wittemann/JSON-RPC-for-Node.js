@@ -79,7 +79,7 @@ var processRequest = function(rpcRequest, res) {
   var error = checkValidRequest(rpcRequest)
   if (error) {
     send(res, error.response, error.httpCode);
-  };  
+  };
   
   // named parameter handling
   if (
@@ -104,7 +104,8 @@ var processRequest = function(rpcRequest, res) {
     if (result instanceof process.Promise) {
       // not failed
       result.addCallback(function(result) {
-        finishRequest(rpcRequest, res, result, null);        
+        var rpcRespone = createResponse(result, null, rpcRequest);
+        send(res, rpcRespone, rpcRequest.id != null ? 200 : 204);
       });
       // failed
       result.addErrback(function(e) {    
@@ -112,28 +113,16 @@ var processRequest = function(rpcRequest, res) {
         send(res, error.response, error.httpCode);        
       });
       return;
+    // sync requests
     } else {
-      finishRequest(rpcRequest, res, result, null);
+      var rpcRespone = createResponse(result, null, rpcRequest);
+      send(res, rpcRespone, rpcRequest.id != null ? 200 : 204);
     }
   } catch (e) {
     var error = methodNotFound(rpcRequest);
     send(res, error.response, error.httpCode);    
     return;
   }
-}
-
-
-var finishRequest = function(rpcRequest, res, result, error) {
-  // check for id's (needs response)
-  if (rpcRequest.id != null) {
-    res.sendHeader(200, {'Content-Type': 'application/json-rpc'});
-    var rpcRespone = createResponse(result, error, rpcRequest);
-    res.sendBody(JSON.stringify(rpcRespone));
-  } else {
-    res.sendHeader(204, {'Connection': 'close'});
-  }
-
-  res.finish();
 }
 
 
