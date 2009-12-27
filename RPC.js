@@ -46,7 +46,7 @@ http.createServer(function (req, res) {
         params: JSON.parse(req.uri.params.params),
         id: req.uri.params.id
       };
-      processRequest(rpcRequest, res);      
+      processRequest(rpcRequest, res);
     } catch (e) {
       var error = parseError();
       send(res, error.response, error.httpCode);
@@ -62,24 +62,43 @@ http.createServer(function (req, res) {
 
     req.addListener("complete", function() {
       try {
-        var rpcRequest = JSON.parse(body);
-        processRequest(rpcRequest, res);        
+        var rpcRequest = JSON.parse(body);        
+        processRequest(rpcRequest, res);
       } catch (e) {
         var error = parseError();
         send(res, error.response, error.httpCode);        
       }
-    });    
+    });
   } 
 }).listen(8000);
 sys.puts('Server running at http://127.0.0.1:8000/');
 
 
 var processRequest = function(rpcRequest, res) {
+  var response = processSingleRequest(rpcRequest, res);
+  if (response instanceof process.Promise) {
+    // not failed
+    response.addCallback(function(result) {
+      send(
+        res, 
+        createResponse(result, null, rpcRequest), 
+        rpcRequest.id != null ? 200 : 204
+      );                    
+    });
+    // failed
+    response.addErrback(function(e) {    
+      var error = internalError(rpcRequest);
+      send(res, error.response, error.httpCode);            
+    });  
+  } else {
+    send(res, response.response, response.httpCode);          
+  }  
+}
+
+var processSingleRequest = function(rpcRequest) {
   // validate
   var error = checkValidRequest(rpcRequest)
-  if (error) {
-    send(res, error.response, error.httpCode);
-  };
+  if (error) { return error };
   
   // named parameter handling
   if (
@@ -93,38 +112,25 @@ var processRequest = function(rpcRequest, res) {
   try {
     // check for param count
     if (service[rpcRequest.method].length != rpcRequest.params.length) {
-      var error = invalidParams(rpcRequest);
-      send(res, error.response, error.httpCode);      
-      return;
+      return invalidParams(rpcRequest);
     }
     
     var result = service[rpcRequest.method].apply(service, rpcRequest.params);
     
     // check for async requests
     if (result instanceof process.Promise) {
-      // not failed
-      result.addCallback(function(result) {
-        var rpcRespone = createResponse(result, null, rpcRequest);
-        send(res, rpcRespone, rpcRequest.id != null ? 200 : 204);
-      });
-      // failed
-      result.addErrback(function(e) {    
-        var error = internalError(rpcRequest);
-        send(res, error.response, error.httpCode);        
-      });
-      return;
+      return result;
     // sync requests
     } else {
-      var rpcRespone = createResponse(result, null, rpcRequest);
-      send(res, rpcRespone, rpcRequest.id != null ? 200 : 204);
+      return {
+        httpCode: rpcRequest.id != null ? 200 : 204, 
+        response: createResponse(result, null, rpcRequest)
+      };      
     }
   } catch (e) {
-    var error = methodNotFound(rpcRequest);
-    send(res, error.response, error.httpCode);    
-    return;
+    return methodNotFound(rpcRequest);
   }
 }
-
 
 var send = function(res, rpcRespone, httpCode) {
   // default resposes
@@ -137,7 +143,6 @@ var send = function(res, rpcRespone, httpCode) {
   }
   res.finish();
 }
-
 
 var createResponse = function(result, error, rpcRequest) {
   if (version === "2.0") {
@@ -155,7 +160,6 @@ var createResponse = function(result, error, rpcRequest) {
     };    
   }
 }
-
 
 var checkValidRequest = function(rpcRequest) {
   if (
