@@ -30,6 +30,10 @@
       font-size: 13px;
       padding: 0px;
     }
+
+    #result {
+      line-height: 1.5em;
+    }
 	  
 	</style>
 	
@@ -67,7 +71,12 @@
       '[{"jsonrpc": "2.0", "method": "add", "params": [1, 2], "id": 1}, {"jsonrpc": "2.0", "method": "add", "params": [2, 3], "id": 2}]' : 
         '[{"jsonrpc":"2.0","result":3,"id":1},{"jsonrpc":"2.0","result":5,"id":2}]',
       '{"jsonrpc": "2.0", "method": "add", "params": {a: 1, b: 2}, "id": 1}' : 
-        '{"jsonrpc":"2.0","result":3,"id":1}'
+        '{"jsonrpc":"2.0","result":3,"id":1}',
+      '[{"jsonrpc": "2.0", "method": "pwd", "params": [], "id": 1}, {"jsonrpc": "2.0", "method": "add", "params": [2, 3], "id": 2}]' : 
+        '[{"jsonrpc":"2.0","result":"/Users/mw/Documents/1und1/workspace/node\\n","id":1},{"jsonrpc":"2.0","result":5,"id":2}]',
+      '[{"jsonrpc": "2.0", "method": "pwd", "params": [], "id": 1}, {"jsonrpc": "2.0", "method": "affe", "params": [2, 3], "id": 2}]' : 
+        '[{"jsonrpc":"2.0","result":"/Users/mw/Documents/1und1/workspace/node\\n","id":1},{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found."},"id":2}]'
+
 	  } 
 	
 	
@@ -122,7 +131,7 @@
             document.getElementById("result").style.backgroundColor = "#33FF33";
           } else {
             document.getElementById("result").style.backgroundColor = "#FF3333";
-            document.getElementById("result").innerHTML += "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + valid;
+            document.getElementById("result").innerHTML += "<br>Expected:<br>" + valid;
           }
         }
       }
@@ -159,7 +168,7 @@
   </table>
   <h3>Results</h3>
   <input type="button" value="clear" onclick="document.getElementById('result').innerHTML = '';">
-  <span id="result"></span>
+  <div id="result"></div>
   <table>
     <tr>
       <td valign="top">
@@ -240,6 +249,10 @@
           <tr>
             <td>Batch (async):</td>
             <td><input onclick="filin(this)" type='button' value='[{"jsonrpc": "2.0", "method": "pwd", "params": [], "id": 1}, {"jsonrpc": "2.0", "method": "add", "params": [2, 3], "id": 2}]'></td>
+          </tr>
+          <tr>
+            <td>Batch (with error):</td>
+            <td><input onclick="filin(this)" type='button' value='[{"jsonrpc": "2.0", "method": "pwd", "params": [], "id": 1}, {"jsonrpc": "2.0", "method": "affe", "params": [2, 3], "id": 2}]'></td>
           </tr>
                    
         </table>
