@@ -37,7 +37,7 @@ var service = require(serviceFile);
 
 // create the server
 http.createServer(function (req, res) {
-    
+
   // handle GET requests
   if (req.method === "GET" && req.uri.params.method) {
     try {
@@ -113,7 +113,7 @@ var processRequest = function(rpcRequest, res) {
         result.addErrback(errorHandler);  
       // sync handling      
       } else {
-        response[i] = result.response;        
+        response[i] = result.httpCode == 204 ? "NOTIFICATION" : result.response;
       }
     }
     conditionalSend(res, rpcRequest, response, httpCode);
@@ -192,10 +192,13 @@ var send = function(res, rpcRespone, httpCode) {
 
 var conditionalSend = function(res, rpcRequest, response, httpCode) {
   var done = true;
-  for (var i = 0; i < rpcRequest.length; i++) {
+  for (var i = rpcRequest.length - 1; i >= 0; i--) {
     if (response[i] == null) {
       done = false;
       break;
+    }
+    if (response[i] == "NOTIFICATION") {
+      response.splice(i, 1);
     }
   }
   if (done) {
