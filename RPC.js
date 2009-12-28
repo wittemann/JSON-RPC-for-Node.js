@@ -75,24 +75,70 @@ sys.puts('Server running at http://127.0.0.1:8000/');
 
 
 var processRequest = function(rpcRequest, res) {
-  var response = processSingleRequest(rpcRequest, res);
-  if (response instanceof process.Promise) {
-    // not failed
-    response.addCallback(function(result) {
-      send(
-        res, 
-        createResponse(result, null, rpcRequest), 
-        rpcRequest.id != null ? 200 : 204
-      );                    
-    });
-    // failed
-    response.addErrback(function(e) {    
-      var error = internalError(rpcRequest);
-      send(res, error.response, error.httpCode);            
-    });  
+  // batch case for version 2.0
+  if (version == "2.0" && rpcRequest instanceof Array) {
+    var response = [];
+    var httpCode = 200;
+    for (var i = 0; i < rpcRequest.length; i++) {
+      // check for invalid requests
+      if (!(rpcRequest[i] instanceof Object)) {
+        var error = invalidRequest();
+        send(res, error.response, error.httpCode);
+        return;
+      }
+      
+      response[i] = null;
+      var result = processSingleRequest(rpcRequest[i]);
+      
+      // async handling
+      if (result instanceof process.Promise) {
+        
+        // not failed        
+        var okHandler = function(i) {
+          return function(result) {
+            response[i] = createResponse(result, null, rpcRequest[i]);
+            conditionalSend(res, rpcRequest, response, httpCode);          
+          };
+        }(i);
+        result.addCallback(okHandler);
+
+        // failed
+        var errorHandler = function(i) {
+          return function(e) {    
+            var error = internalError(rpcRequest[i]);
+            response[i] = error.response;
+            conditionalSend(res, rpcRequest, response, httpCode);          
+          };
+        }(i);
+        result.addErrback(errorHandler);  
+      // sync handling      
+      } else {
+        response[i] = result.response;        
+      }
+    }
+    conditionalSend(res, rpcRequest, response, httpCode);
+    
+  // non batch case
   } else {
-    send(res, response.response, response.httpCode);          
-  }  
+    var response = processSingleRequest(rpcRequest);
+    if (response instanceof process.Promise) {
+      // not failed
+      response.addCallback(function(result) {
+        send(
+          res, 
+          createResponse(result, null, rpcRequest), 
+          rpcRequest.id != null ? 200 : 204
+        );                    
+      });
+      // failed
+      response.addErrback(function(e) {    
+        var error = internalError(rpcRequest);
+        send(res, error.response, error.httpCode);            
+      });
+    } else {
+      send(res, response.response, response.httpCode);
+    }    
+  } 
 }
 
 var processSingleRequest = function(rpcRequest) {
@@ -144,6 +190,19 @@ var send = function(res, rpcRespone, httpCode) {
   res.finish();
 }
 
+var conditionalSend = function(res, rpcRequest, response, httpCode) {
+  var done = true;
+  for (var i = 0; i < rpcRequest.length; i++) {
+    if (response[i] == null) {
+      done = false;
+      break;
+    }
+  }
+  if (done) {
+    send(res, response, httpCode);      
+  }  
+}
+
 var createResponse = function(result, error, rpcRequest) {
   if (version === "2.0") {
     var rpcResponse = {
@@ -187,7 +246,6 @@ var checkValidRequest = function(rpcRequest) {
 /**
  * Named arguments handling
  */
-
 var paramsObjToArr = function(rpcRequest) {
   var argumentsArray = [];
   var argumentNames = getArgumentNames(service[rpcRequest.method]);
