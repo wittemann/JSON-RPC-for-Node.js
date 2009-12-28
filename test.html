@@ -75,8 +75,9 @@
       '[{"jsonrpc": "2.0", "method": "pwd", "params": [], "id": 1}, {"jsonrpc": "2.0", "method": "add", "params": [2, 3], "id": 2}]' : 
         '[{"jsonrpc":"2.0","result":"/Users/mw/Documents/1und1/workspace/node\\n","id":1},{"jsonrpc":"2.0","result":5,"id":2}]',
       '[{"jsonrpc": "2.0", "method": "pwd", "params": [], "id": 1}, {"jsonrpc": "2.0", "method": "affe", "params": [2, 3], "id": 2}]' : 
-        '[{"jsonrpc":"2.0","result":"/Users/mw/Documents/1und1/workspace/node\\n","id":1},{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found."},"id":2}]'
-
+        '[{"jsonrpc":"2.0","result":"/Users/mw/Documents/1und1/workspace/node\\n","id":1},{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found."},"id":2}]',
+      '[{"jsonrpc": "2.0", "method": "add", "params": [1,2], "id": "1"}, {"jsonrpc": "2.0", "method": "note", "params": [7, 12], "id": null}, {"jsonrpc": "2.0", "method": "echo", "params": ["huhu"], "id": "2"}, {"foo": "boo"}, {"jsonrpc": "2.0", "method": "add", "params": {"a": 3, "b": 12}, "id": "5"}, {"jsonrpc": "2.0", "method": "pwd", "params": [], "id": "9"} ]' : 
+        '[{"jsonrpc":"2.0","result":3,"id":"1"},{"jsonrpc":"2.0","result":"huhu","id":"2"},{"jsonrpc":"2.0","error":{"code":-32600,"message":"Invalid Request."},"id":null},{"jsonrpc":"2.0","result":15,"id":"5"},{"jsonrpc":"2.0","result":"/Users/mw/Documents/1und1/workspace/node\\n","id":"9"}]'
 	  } 
 	
 	
@@ -254,6 +255,10 @@
             <td>Batch (with error):</td>
             <td><input onclick="filin(this)" type='button' value='[{"jsonrpc": "2.0", "method": "pwd", "params": [], "id": 1}, {"jsonrpc": "2.0", "method": "affe", "params": [2, 3], "id": 2}]'></td>
           </tr>
+          <tr>
+            <td>Batch (huge):</td>
+            <td><input onclick="filin(this)" type='button' value='[{"jsonrpc": "2.0", "method": "add", "params": [1,2], "id": "1"}, {"jsonrpc": "2.0", "method": "note", "params": [7, 12], "id": null}, {"jsonrpc": "2.0", "method": "echo", "params": ["huhu"], "id": "2"}, {"foo": "boo"}, {"jsonrpc": "2.0", "method": "add", "params": {"a": 3, "b": 12}, "id": "5"}, {"jsonrpc": "2.0", "method": "pwd", "params": [], "id": "9"} ]'></td>
+          </tr>          
                    
         </table>
             
