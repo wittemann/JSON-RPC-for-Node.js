@@ -20,6 +20,11 @@ exports.service = null;
 
 exports.createServer = function() {
   
+  if (exports.service == null) {
+    sys.puts("Please supply a service file via .service.");
+    process.exit(10);
+  }
+  
   return http.createServer(function (req, res) {
     // handle GET requests
     if (req.method === "GET" && req.uri.params.method) {
