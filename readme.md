@@ -1,22 +1,22 @@
 # JSON-RPC for node.js
 Here you see a implementation of the JSON-RPC specification version 1.0 and 
 version 2.0 (proposal).
-http://json-rpc.org/wiki/specification
-http://groups.google.com/group/json-rpc/web/json-rpc-1-2-proposal
+* [Version 1.0](http://json-rpc.org/wiki/specification)
+* [Version 2.0](http://groups.google.com/group/json-rpc/web/json-rpc-1-2-proposal) (proposal)
 
 ## Usage
 See the `modultest.js` file for an example. The `service.js` file includes the 
 methods which can be called in this test scenario.
 
-var rpc = require('./jsonrpc');
-rpc.service = require("./service");
-rpc.createServer().listen(8000);
+    var rpc = require('./jsonrpc');
+    rpc.service = require("./service");
+    rpc.createServer().listen(8000);
 
 The service is quite simple, for example:
 
-this.echo = function(a) {
-  return a;
-}
+    this.echo = function(a) {
+      return a;
+    }
 
 ## Manual Testing
 For manual testing, use the test.html file. Currently, it only works in Safari 
@@ -31,5 +31,7 @@ file.
 
 ## TODO
 The unit tests are by far not complete so that my next topic to complete the 
-unit test (for POST and the rest of the GET requests). Additionally, requests 
-for JSON-RPC 1.0 should be included.
+unit test.
+* Complete the GET tests
+* POST unit test
+* Version 1.0 tests
