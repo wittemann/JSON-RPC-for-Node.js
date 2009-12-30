@@ -1,6 +1,7 @@
 # JSON-RPC for node.js
 Here you see a implementation of the JSON-RPC specification version 1.0 and 
 version 2.0 (proposal).
+
   * [Version 1.0](http://json-rpc.org/wiki/specification)
   * [Version 2.0](http://groups.google.com/group/json-rpc/web/json-rpc-1-2-proposal) (proposal)
 
@@ -32,6 +33,7 @@ file.
 ## TODO
 The unit tests are by far not complete so that my next topic to complete the 
 unit test.
+
   * Complete the GET tests
   * POST unit test
   * Version 1.0 tests
